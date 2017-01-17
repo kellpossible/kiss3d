@@ -90,7 +90,7 @@ extern crate num;
 extern crate nalgebra as na;
 extern crate ncollide_procedural;
 extern crate image;
-extern crate freetype;
+// extern crate freetype;
 extern crate glfw;
 
 mod error;
@@ -104,4 +104,4 @@ pub mod point_renderer;
 pub mod builtin;
 pub mod post_processing;
 pub mod resource;
-pub mod text;
+// pub mod text;

@@ -24,7 +24,6 @@ name = "kiss3d"
 path = "src/lib.rs"
 
 [dependencies]
-freetype-rs = "0.9.*"
 gl = "0.6.*"
 glfw = "0.8.*"
 image = "0.6.*"

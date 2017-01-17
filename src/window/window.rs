@@ -28,7 +28,7 @@ use point_renderer::PointRenderer;
 use post_processing::PostProcessingEffect;
 use resource::{FramebufferManager, RenderTarget, Texture, TextureManager, Mesh};
 use light::Light;
-use text::{TextRenderer, Font};
+// use text::{TextRenderer, Font};
 use window::EventManager;
 use camera::ArcBall;
 
@@ -50,7 +50,7 @@ pub struct Window {
     background:                 Vector3<GLfloat>,
     line_renderer:              LineRenderer,
     point_renderer:             PointRenderer,
-    text_renderer:              TextRenderer,
+    // text_renderer:              TextRenderer,
     framebuffer_manager:        FramebufferManager,
     post_process_render_target: RenderTarget,
     curr_time:                  Instant,
@@ -160,9 +160,9 @@ impl Window {
     // XXX: remove this (moved to the render_frame).
     /// Adds a string to be drawn during the next frame.
     #[inline]
-    pub fn draw_text(&mut self, text: &str, pos: &Point2<f32>, font: &Rc<Font>, color: &Point3<f32>) {
-        self.text_renderer.draw_text(text, pos, font, color);
-    }
+    // pub fn draw_text(&mut self, text: &str, pos: &Point2<f32>, font: &Rc<Font>, color: &Point3<f32>) {
+    //     self.text_renderer.draw_text(text, pos, font, color);
+    // }
 
     /// Removes an object from the scene.
     pub fn remove(&mut self, sn: &mut SceneNode) {
@@ -348,7 +348,7 @@ impl Window {
             background:            Vector3::new(0.0, 0.0, 0.0),
             line_renderer:         LineRenderer::new(),
             point_renderer:        PointRenderer::new(),
-            text_renderer:         TextRenderer::new(),
+            // text_renderer:         TextRenderer::new(),
             post_process_render_target: FramebufferManager::new_render_target(width as usize, height as usize),
             framebuffer_manager:   FramebufferManager::new(),
             curr_time:             Instant::now(),
@@ -574,7 +574,7 @@ impl Window {
             None => { }
         }
 
-        self.text_renderer.render(w, h);
+        // self.text_renderer.render(w, h);
 
         // We are done: swap buffers
         self.window.swap_buffers();
