@@ -1,17 +1,17 @@
 use std::sync::mpsc::Receiver;
 use std::rc::Rc;
 use std::cell::RefCell;
-use glfw;
+use glutin;
 
 /// An event.
 pub struct Event<'a> {
     /// The event timestamp.
     pub timestamp: f64,
     /// The exact glfw event value. This can be modified to fool the other event handlers.
-    pub value:     glfw::WindowEvent,
+    pub value:     glutin::Event,
     /// Set this to `true` to prevent the window or the camera from handling the event.
     pub inhibited: bool,
-    inhibitor:     &'a RefCell<Vec<glfw::WindowEvent>>
+    inhibitor:     &'a RefCell<Vec<glutin::Event>>
 }
 
 impl<'a> Drop for Event<'a> {
@@ -26,8 +26,8 @@ impl<'a> Drop for Event<'a> {
 impl<'a> Event<'a> {
     #[inline]
     fn new(timestamp: f64,
-           value:     glfw::WindowEvent,
-           inhibitor: &RefCell<Vec<glfw::WindowEvent>>)
+           value:     glutin::Event,
+           inhibitor: &RefCell<Vec<glutin::Event>>)
            -> Event {
         Event {
             timestamp: timestamp,
@@ -40,14 +40,14 @@ impl<'a> Event<'a> {
 
 /// An iterator through events.
 pub struct Events<'a> {
-    stream:    glfw::FlushedMessages<'a, (f64, glfw::WindowEvent)>,
-    inhibitor: &'a RefCell<Vec<glfw::WindowEvent>>
+    stream:    glfw::FlushedMessages<'a, (f64, glutin::Event)>,
+    inhibitor: &'a RefCell<Vec<glutin::Event>>
 }
 
 impl<'a> Events<'a> {
     #[inline]
-    fn new(stream:    glfw::FlushedMessages<'a, (f64, glfw::WindowEvent)>,
-           inhibitor: &'a RefCell<Vec<glfw::WindowEvent>>)
+    fn new(stream:    glfw::FlushedMessages<'a, (f64, glutin::Event)>,
+           inhibitor: &'a RefCell<Vec<glutin::Event>>)
            -> Events<'a> {
         Events {
             stream:    stream,
@@ -73,15 +73,15 @@ impl<'a> Iterator for Events<'a> {
 ///
 /// It is not lifetime-bound to the main window.
 pub struct EventManager {
-    events:    Rc<Receiver<(f64, glfw::WindowEvent)>>,
-    inhibitor: Rc<RefCell<Vec<glfw::WindowEvent>>>
+    events:    Rc<Receiver<(f64, glutin::Event)>>,
+    inhibitor: Rc<RefCell<Vec<glutin::Event>>>
 }
 
 impl EventManager {
     /// Creates a new event manager.
     #[inline]
-    pub fn new(events:    Rc<Receiver<(f64, glfw::WindowEvent)>>,
-               inhibitor: Rc<RefCell<Vec<glfw::WindowEvent>>>)
+    pub fn new(events:    Rc<Receiver<(f64, glutin::Event)>>,
+               inhibitor: Rc<RefCell<Vec<glutin::Event>>>)
                -> EventManager {
         EventManager {
             events:    events,

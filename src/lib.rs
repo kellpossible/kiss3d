@@ -91,7 +91,7 @@ extern crate nalgebra as na;
 extern crate ncollide_procedural;
 extern crate image;
 // extern crate freetype;
-extern crate glfw;
+extern crate glutin;
 
 mod error;
 pub mod window;

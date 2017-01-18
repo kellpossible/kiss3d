@@ -25,7 +25,7 @@ path = "src/lib.rs"
 
 [dependencies]
 gl = "0.6.*"
-glfw = "0.8.*"
+glutin = "*"
 image = "0.6.*"
 libc = "0.2.*"
 nalgebra = "0.9.*"

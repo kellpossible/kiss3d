@@ -6,8 +6,10 @@
 use std::mem;
 use std::thread;
 use std::time::{Duration, Instant};
-use glfw;
-use glfw::{Context, Key, Action, WindowMode, WindowEvent};
+use glutin;
+use glutin::{ElementState, VirtualKeyCode};
+// use glfw;
+// use glfw::{Context, Key, Action, WindowMode, WindowEvent};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::Receiver;
@@ -40,10 +42,8 @@ static DEFAULT_HEIGHT: u32 = 600u32;
 ///
 /// This is the main interface with the 3d engine.
 pub struct Window {
-    events:                     Rc<Receiver<(f64, WindowEvent)>>,
-    unhandled_events:           Rc<RefCell<Vec<WindowEvent>>>,
-    glfw:                       glfw::Glfw,
-    window:                     glfw::Window,
+    unhandled_events:           Rc<RefCell<Vec<glutin::Event>>>,
+    window:                     glutin::Window,
     max_dur_per_frame:          Option<Duration>,
     scene:                      SceneNode,
     light_mode:                 Light, // FIXME: move that to the scene graph
@@ -59,26 +59,26 @@ pub struct Window {
 
 impl Window {
     /// Indicates whether this window should be closed.
-    #[inline]
-    pub fn should_close(&self) -> bool {
-        self.window.should_close()
-    }
+    // #[inline]
+    // pub fn should_close(&self) -> bool {
+    //     self.window.should_close()
+    // }
 
     /// Access the glfw context.
-    #[inline]
-    pub fn context(&self) -> &glfw::Glfw {
-        &self.glfw
-    }
+    // #[inline]
+    // pub fn context(&self) -> &glfw::Glfw {
+    //     &self.glfw
+    // }
 
-    /// Access the glfw window.
+    /// Access the glutin window.
     #[inline]
-    pub fn glfw_window(&self) -> &glfw::Window {
+    pub fn glutin_window(&self) -> &glutin::Window {
         &self.window
     }
 
     /// Mutably access the glfw window.
     #[inline]
-    pub fn glfw_window_mut(&mut self) -> &mut glfw::Window {
+    pub fn glutin_window_mut(&mut self) -> &mut glutin::Window {
         &mut self.window
     }
 
@@ -101,7 +101,7 @@ impl Window {
     /// The size of the window.
     #[inline]
     pub fn size(&self) -> Vector2<f32> {
-        let (w, h) = self.window.get_size();
+        let (w, h) = self.window.get_inner_size();
 
         Vector2::new(w as f32, h as f32)
     }
@@ -120,7 +120,8 @@ impl Window {
     /// Closes the window.
     #[inline]
     pub fn close(&mut self) {
-        self.window.set_should_close(true)
+        // self.window.set_should_close(true)
+        unimplemented!()
     }
 
     /// Hides the window, without closing it. Use `show` to make it visible again.
@@ -319,29 +320,23 @@ impl Window {
     fn do_new(title: &str, hide: bool, width: u32, height: u32) -> Window {
         // FIXME: glfw::set_error_callback(~ErrorCallback);
 
-        static mut GLFW_SINGLETON: Option<glfw::Glfw> = None;
-        static INIT: Once = ONCE_INIT;
+        let window = glutin::Window::new().unwrap();
+        window.set_inner_size(width, height);
+        window.set_title(title);
 
-        let glfw = unsafe {
-            INIT.call_once(|| {
-                GLFW_SINGLETON = Some(glfw::init(glfw::FAIL_ON_ERRORS).unwrap());
-            });
-            GLFW_SINGLETON.unwrap().clone()
+        unsafe {
+            window.make_current();
         };
 
-
-        let (mut window, events) = glfw.create_window(width, height, title, WindowMode::Windowed).expect("Unable to open a glfw window.");
-
-        window.make_current();
-
-        verify!(gl::load_with(|name| window.get_proc_address(name) as *const _));
+        unsafe {
+            verify!(gl::load_with(|name| window.get_proc_address(name) as *const _));
+        };
+        
         init_gl();
 
         let mut usr_window = Window {
             max_dur_per_frame:      None,
-            glfw:                  glfw,
             window:                window,
-            events:                Rc::new(events),
             unhandled_events:      Rc::new(RefCell::new(Vec::new())),
             scene:                 SceneNode::new_empty(),
             light_mode:            Light::Absolute(Point3::new(0.0, 10.0, 0.0)),
@@ -434,7 +429,7 @@ impl Window {
 
     /// Gets the events manager that gives access to an event iterator.
     pub fn events(&self) -> EventManager {
-        EventManager::new(self.events.clone(), self.unhandled_events.clone())
+        EventManager::new(self.unhandled_events.clone())
     }
 
     /// Poll events and pass them to a user-defined function. If the function returns `true`, the
@@ -450,20 +445,24 @@ impl Window {
             self.handle_event(camera, event)
         }
 
-        for event in glfw::flush_messages(&*events) {
-            self.handle_event(camera, &event.1)
-        }
+        // TODO: could be a problem here
+        // for event in glfw::flush_messages(&*events) {
+        //     self.handle_event(camera, &event.1)
+        // }
 
         unhandled_events.borrow_mut().clear();
-        self.glfw.poll_events();
+        
+        for event in self.window.poll_events() {
+            self.handle_event(camera, &event);
+        }
     }
 
-    fn handle_event(&mut self, camera: &mut Option<&mut Camera>, event: &WindowEvent) {
+    fn handle_event(&mut self, camera: &mut Option<&mut Camera>, event: &glutin::Event) {
         match *event {
-            WindowEvent::Key(Key::Escape, _, Action::Release, _) => {
+            glutin::Event::KeyboardInput(ElementState::Released, code, VirtualKeyCode::Escape) => {
                 self.close();
             },
-            WindowEvent::FramebufferSize(w, h) => {
+            glutin::Event::Resized(w, h) => {
                 self.update_viewport(w as f32, h as f32);
             },
             _ => { }
@@ -531,7 +530,7 @@ impl Window {
         let w = self.width();
         let h = self.height();
 
-        camera.handle_event(&self.window, &WindowEvent::FramebufferSize(w as i32, h as i32));
+        camera.handle_event(&self.window, &glutin::Event::Resized(w as u32, h as u32));
         camera.update(&self.window);
 
         match self.light_mode {
@@ -630,11 +629,13 @@ fn init_gl() {
     /*
      * Misc configurations
      */
-    verify!(gl::FrontFace(gl::CCW));
-    verify!(gl::Enable(gl::DEPTH_TEST));
-    verify!(gl::Enable(gl::SCISSOR_TEST));
-    verify!(gl::DepthFunc(gl::LEQUAL));
-    verify!(gl::FrontFace(gl::CCW));
-    verify!(gl::Enable(gl::CULL_FACE));
-    verify!(gl::CullFace(gl::BACK));
+    unsafe {
+        verify!(gl::FrontFace(gl::CCW));
+        verify!(gl::Enable(gl::DEPTH_TEST));
+        verify!(gl::Enable(gl::SCISSOR_TEST));
+        verify!(gl::DepthFunc(gl::LEQUAL));
+        verify!(gl::FrontFace(gl::CCW));
+        verify!(gl::Enable(gl::CULL_FACE));
+        verify!(gl::CullFace(gl::BACK));
+    }
 }
